@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo</title>
+    <!-- Bootstrap core CSS -->
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        .seach-gis select {
+            padding: 5px;
+        }
+
+        .seach-gis input {
+            padding: 3px;
+        }
+
+        .tab {
+            margin-top: 20px;
+        }
+        .tab .tab-left{float:left}
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+
+            <br><br>
+            <div style="">
+                <div style="float: left; width: 300px;">
+                    <div style="border: solid 1px #333333;padding: 5px;">
+                        呈现级别：
+                        <input type="radio" name="radview" checked="checked"> 省级级别
+                        <input type="radio" name="radview"> 地市级别
+
+                    </div>
+
+                    <div style="" class="tab">
+                        <div  class="tab-left">
+                            <div style="writing-mode:vertical-rl; border: solid 1px #333333;padding: 2px;margin-bottom: -1px;">
+                                <a href="javascript:void(0)">呈现指标</a>
+                            </div>
+                            <div style="writing-mode:vertical-rl; border: solid 1px #333333;padding: 2px;"><a
+                                    href="javascript:void(0)">分析结果</a></div>
+
+                        </div>
+                        <div style="float:left;margin-left:10px;">
+                            <ul style="list-style: none;padding: 0; margin: 0;">
+                                <li><label><input type="radio" name="kpiName"
+                                                  checked="checked">VoLTE语言网内呼叫平均时延（ms）</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE语言网至外呼叫平均时延（ms）</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE语言平均MOS</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE平均eSRVCC时延(ms)</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE eSRVCC成功率（%）</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE语言接通率（%）</label></li>
+                                <li><label><input type="radio" name="kpiName">VoLTE语言掉话率（%）</label></li>
+                                <li><label><input type="radio" name="kpiName">RTP 上行MOS值 </label></li>
+                                <li><label><input type="radio" name="kpiName">RTP 下行MOS值 </label></li>
+
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="float: left; margin-left:20px; ">
+                    <div class="seach-gis">
+                        <select id="selStartTime">
+                            <option>开始时间</option>
+                        </select>
+
+                        <select id="selStartTime">
+                            <option>结束时间</option>
+                        </select>
+
+                        <select id="selStartTime">
+                            <option>终端厂商</option>
+                        </select>
+
+                        <select id="selStartTime">
+                            <option>终端类型</option>
+                        </select>
+
+                        <input type="button" value="  确认  ">
+
+                    </div>
+
+                    <canvas id="mycanvas" width="750" height="600" style="border: solid 0px #ff495a"></canvas>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div id="domain" style="display: none;">
+    {% for d in domain %}
+
+        <div id="div{{ d.id }}" data-color="{{ d.acolor }}">{{ d.area }}</div>
+
+    {% endfor %}
+
+</div>
+
+<script type="text/javascript" src="/static/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/static/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+
+    var zoom = 4;
+
+    //经度转像素点
+    function lon2Pixel(lon, zoom) {
+        return (lon + 180) * (256 << zoom) / 360;
+    }
+
+    //纬度转像素点
+    function lat2Pixel(lat, zoom) {
+        var siny = Math.sin(lat * Math.PI / 180);
+        var y = Math.log((1 + siny) / (1 - siny));
+        return (128 << zoom) * (1 - y / (2 * Math.PI));
+    }
+
+    function GetPoint(data) {
+        var x, y;
+        x = lon2Pixel(parseFloat(data[0]), zoom) - 2880;
+        y = lat2Pixel(parseFloat(data[1]), zoom) - 1300;
+        return [x, y];
+    }
+
+    var mycanvas = $("#mycanvas");
+    var context = mycanvas.get(0).getContext("2d");
+    $(function () {
+        DrawAll();
+    });
+
+    function DrawAll() {
+
+        $("#domain").children().each(function (node) {
+
+            var data = $(this).html();
+            var points = data.split(';');
+            context.beginPath();
+            var point = GetPoint(points[0].split(','));
+            context.moveTo(point[0], point[1]);
+            for (var i = 1; i < points.length; i++) {
+                point = GetPoint(points[i].split(','));
+                context.lineTo(point[0], point[1]);
+                context.fillStyle = $(this).data("color");
+            }
+            context.fill();
+            context.closePath();
+        })
+
+        context.scale(2, 2);
+    }
+
+    function test1() {
+        var mycanvas = $("#mycanvas");
+        var context = mycanvas.get(0).getContext("2d");
+
+        var data = $("#data").html();
+        var points = data.split(';');
+
+        context.beginPath();
+        var point = GetPoint(points[0].split(','));
+        context.moveTo(point[0], point[1]);
+        for (var i = 1; i < points.length; i++) {
+            point = GetPoint(points[i].split(','));
+            context.lineTo(point[0], point[1]);
+        }
+        context.fillStyle = "red";
+        context.fill();
+        context.closePath();
+
+        var data = $("#data2").html();
+        var points = data.split(';');
+
+        context.beginPath();
+
+        var point = GetPoint(points[0].split(','));
+        context.moveTo(point[0], point[1]);
+        for (var i = 1; i < points.length; i++) {
+            point = GetPoint(points[i].split(','));
+            context.lineTo(point[0], point[1]);
+        }
+
+        context.fillStyle = "#cccccc";
+        context.fill();
+        context.closePath();
+    }
+
+    function test2() {
+        var mycanvas = $("#mycanvas");
+        var context = mycanvas.get(0).getContext("2d");
+
+        var data = $("#data").html();
+        var points = data.split(';');
+
+        context.beginPath();
+        for (var i = 0; i < points.length; i++) {
+            var point = GetPoint(points[i].split(','));
+            context.arc(point[0], point[1], 5, 0, Math.PI * 2, true);
+
+        }
+
+        context.closePath();
+        context.stroke();
+    }
+
+</script>
+
+</body>
+</html>
